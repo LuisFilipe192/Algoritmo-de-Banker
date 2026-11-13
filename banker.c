@@ -159,8 +159,8 @@ static void load_customers(const char *path){
 
         for (int j = 0; j < n_resources; j++){
             need[i][j] = maximum[i][j];
-        i++;
         }
+        i++;
     }
     fclose(f);
 }

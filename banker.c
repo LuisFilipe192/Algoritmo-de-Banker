@@ -3,6 +3,12 @@
 #include <string.h>
 #include <ctype.h>
 
+
+#define LINE_MAX_LEN 1024
+#define CMD_RQ   1
+#define CMD_RL   2
+#define CMD_STAR 3
+
 static int n_customers = 0;   
 static int n_resources = 0;
 
@@ -108,7 +114,6 @@ static int parse_customer_line(char *line, int *values) {
     return count == n_resources;
 }
 
-#define LINE_MAX_LEN 1024
 
 static void load_customers(const char *path){
     FILE *f = fopen(path, "r");
@@ -165,8 +170,89 @@ static void load_customers(const char *path){
     fclose(f);
 }
 
+static int parse_command_line(char *line, int *type, int *customer, int *values){
+    char *tok = strtok(line," \t");
+
+    if(tok == NULL){
+        return 0;
+    }
+
+    if(strcmp(tok,"*") == 0){
+        *type = CMD_STAR;
+        return strtok(NULL," \t") == NULL;
+    }
+
+    if (strcmp(tok, "RQ") == 0){
+        *type = CMD_RQ;
+    }
+    else if (strcmp(tok,"RL") == 0){
+        *type = CMD_RL;
+    }
+    else{
+        return 0;
+    }
+
+    tok = strtok(NULL," \t");
+
+    if (!parse_nonneg_int(tok, customer)){
+        return 0;
+    }
+    if(*customer >= n_customers){
+        return 0;
+    }
+    for(int j = 0; j < n_resources; j++){
+        tok = strtok(NULL, " \t");
+        if(!parse_nonneg_int(tok, &values[j])){
+            return 0;
+        }
+    }
+
+    return strtok(NULL," \t") == NULL;
+}
+
+static void validate_commands(const char *path){
+
+    FILE *f = fopen(path, "r");
+    if (f == NULL){
+        die("could not open commands.txt");
+    }
+
+    int *values = malloc(n_resources * sizeof(int));
+
+    if(values == NULL){
+        die("out of memory");
+    }
+
+    char line[LINE_MAX_LEN];
+    int lineno = 0;
+    int type, customer;
+
+    while(fgets(line, sizeof(line), f) != NULL){
+        lineno++;
+        strip_newline(line);
+
+        if(is_blank(line)){
+            continue;
+        }
+
+        if(!parse_command_line(line, &type, &customer, values)){
+            fprintf(stderr, "Error: commands.txt line %d is invalid "
+                    "(expected 'RQ <customer> <%d values>', "
+                    "'RL <customer> <%d values>' or '*')\n",
+                    lineno, n_resources, n_resources);
+            free(values);
+            fclose(f);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    free(values);
+    fclose(f);
+}
+
 int main(int argc, char *argv[]) {
     parse_args(argc, argv);
     load_customers("customer.txt");
+    validate_commands("commands.txt");
     return 0;
 }

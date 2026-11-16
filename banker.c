@@ -349,13 +349,10 @@ static void request_resources(FILE *out, int c, const int *req){
     fprintf(out,"\n");
 }
 
-static void release_resources(FILE *out, int c, const int *rel){
+static int release_resources(FILE *out, int c, const int *rel){
     for(int j = 0; j < n_resources; j++){
         if(rel[j] > allocation[c][j]){
-            fprintf(out,"The customer %d release ", c);
-            print_vector(out,rel);
-            fprintf(out, " was denied because exceed its allocation\n");
-            return;
+            return 0;
         }
     }
 
@@ -368,6 +365,7 @@ static void release_resources(FILE *out, int c, const int *rel){
     fprintf(out, "Release from customer %d the resources ",c);
     print_vector(out,rel);
     fprintf(out,"\n");
+    return 1;
 }
 
 static void print_state(FILE *out){
@@ -407,8 +405,10 @@ static void run_commands(const char *in_path, const char *out_path){
 
     char line[LINE_MAX_LEN];
     int type, customer;
+    int lineno = 0;
 
     while(fgets(line, sizeof(line), in) != NULL){
+        lineno++;
         strip_newline(line);
 
         if(is_blank(line)){
@@ -421,7 +421,15 @@ static void run_commands(const char *in_path, const char *out_path){
             request_resources(out, customer, values);
         }
         else if(type == CMD_RL){
-            release_resources(out, customer, values);
+            if(!release_resources(out, customer, values)){
+                fprintf(stderr, "Error: commands.txt line %d releases more resources "
+                                "than customer %d has allocated\n", lineno, customer);
+                free(values);
+                fclose(out);
+                fclose(in);
+                remove(out_path);
+                exit(EXIT_FAILURE);
+            }
         }
         else{
             print_state(out);

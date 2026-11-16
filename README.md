@@ -21,7 +21,7 @@ O projeto está organizado da seguinte forma:
 - `README.md` — documentação do projeto.
 - `evidencias.log` — registro dos testes executados durante o desenvolvimento.
 
-Os arquivos `customer.txt` e `commands.txt` são fornecidos pelo professor e devem estar no mesmo diretório do executável.
+Os arquivos customer.txt e commands.txt são fornecidos pelo professor, não fazem parte do repositório e devem ser colocados no mesmo diretório do executável.
 
 ## Como compilar
 
@@ -113,7 +113,7 @@ O estado é considerado seguro somente se todos os clientes puderem ser finaliza
 
 ### Liberação de recursos
 
-A função `release_resources()` trata o comando `RL`. Ela verifica se o cliente não está liberando mais do que possui e, em seguida, devolve os recursos ao `available`, atualizando `allocation` e `need`.
+A função `release_resources()` trata o comando `RL`. Ela verifica se o cliente não está liberando mais do que possui e, em seguida, devolve os recursos ao `available`, atualizando `allocation` e `need`. Se a liberação for maior do que o alocado, a função informa o erro para que o programa encerre a execução.
 
 ### Impressão do estado
 
@@ -130,8 +130,9 @@ São tratados os seguintes casos:
 - Linhas com formatação inválida, como letras, campos vazios ou comandos desconhecidos, indicando o número da linha.
 - Quantidade de recursos nos arquivos diferente da quantidade de argumentos.
 - Comandos que referenciam um cliente inexistente.
+- Liberação (`RL`) de mais recursos do que o cliente tem alocado.
 
-Linhas em branco são ignoradas, e quebras de linha no padrão do Windows (`\r\n`) são aceitas. Uma liberação maior do que o alocado ao cliente é negada com a mensagem `was denied because exceed its allocation`, já que esse caso não é definido no enunciado.
+Linhas em branco são ignoradas, e quebras de linha no padrão do Windows (`\r\n`) são aceitas. Como a liberação maior do que o alocado depende do estado do sistema, ela só pode ser detectada durante a execução dos comandos. Nesse caso, o programa exibe uma mensagem indicando a linha e o cliente, remove o result.txt parcial e encerra com código de saída 1.
 
 ## Testes realizados
 
@@ -144,7 +145,7 @@ Foram realizados testes para verificar:
 - A negação de solicitações quando não há recursos disponíveis suficientes.
 - A negação de solicitações que levariam o sistema a um estado inseguro.
 - A liberação de recursos e a impressão do estado do sistema.
-- O tratamento de argumentos inválidos, arquivos inexistentes e linhas mal formatadas.
+- arquivos inexistentes, linhas mal formatadas e liberações maiores do que o alocado.
 
 O arquivo `result.txt` gerado com as entradas do professor foi comparado com a saída esperada utilizando o comando `diff`, sem apresentar diferenças.
 
